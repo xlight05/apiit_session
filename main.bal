@@ -1,7 +1,20 @@
 import ballerina/log;
+import ballerina/websocket;
+import ballerina/http;
+service /ws on new websocket:Listener(8080) {
 
-public function main() returns error? {
-    string question = "What should i bring today in colombo?";
-    string stringResult = check _weatherAgent->run(question);
-    log:printInfo("Output : " + stringResult);    
+    resource function get .(http:Request req) returns websocket:Service|websocket:Error {
+        return new WsService();
+    }
+
+}
+
+service class WsService {
+    *websocket:Service;
+
+    remote function onTextMessage(websocket:Caller caller, string text) returns error? {
+        string stringResult = check _weatherAgent->run(text);
+        log:printInfo("Output : " + stringResult);      
+        check caller->writeTextMessage(stringResult);
+    }
 }
